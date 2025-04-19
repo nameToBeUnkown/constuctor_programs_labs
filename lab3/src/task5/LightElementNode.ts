@@ -9,6 +9,7 @@ export class LightElementNode extends LightNode {
   private closingType: ClosingType;
   private cssClasses: string[] = [];
   private children: LightNode[] = [];
+  private eventListeners: Record<string, Function[]> = {};
 
   constructor(
     tagName: string,
@@ -77,6 +78,69 @@ export class LightElementNode extends LightNode {
   public addClass(className: string): void {
     if (!this.cssClasses.includes(className)) {
       this.cssClasses.push(className);
+    }
+  }
+
+  public addEventListener(eventType: string, listener: Function): void {
+    if (!this.eventListeners[eventType]) {
+      this.eventListeners[eventType] = [];
+    }
+    if (!this.eventListeners[eventType].includes(listener)) {
+      this.eventListeners[eventType].push(listener);
+      console.log(
+        `Listener added for '${eventType}' event on <${this.tagName}>.`
+      );
+    } else {
+      console.log(
+        `Listener already exists for '${eventType}' event on <${this.tagName}>.`
+      );
+    }
+  }
+
+  public removeEventListener(eventType: string, listener: Function): void {
+    if (this.eventListeners[eventType]) {
+      const index = this.eventListeners[eventType].indexOf(listener);
+      if (index > -1) {
+        this.eventListeners[eventType].splice(index, 1);
+        console.log(
+          `Listener removed for '${eventType}' event on <${this.tagName}>.`
+        );
+        if (this.eventListeners[eventType].length === 0) {
+          delete this.eventListeners[eventType];
+        }
+      } else {
+        console.log(
+          `Listener not found for '${eventType}' event on <${this.tagName}>.`
+        );
+      }
+    } else {
+      console.log(
+        `No listeners found for '${eventType}' event on <${this.tagName}>.`
+      );
+    }
+  }
+
+  public dispatchEvent(eventType: string, eventArgs?: any): void {
+    console.log(`\nDispatching '${eventType}' event on <${this.tagName}>...`);
+    const listeners = this.eventListeners[eventType];
+    if (listeners && listeners.length > 0) {
+      [...listeners].forEach((listener) => {
+        try {
+          listener.call(this, eventArgs);
+        } catch (error) {
+          console.error(
+            `Error executing listener for '${eventType}' on <${this.tagName}>:`,
+            error
+          );
+        }
+      });
+      console.log(
+        `Finished dispatching '${eventType}' event on <${this.tagName}>. ${listeners.length} listener(s) executed.`
+      );
+    } else {
+      console.log(
+        `No listeners registered for '${eventType}' event on <${this.tagName}>.`
+      );
     }
   }
 }
